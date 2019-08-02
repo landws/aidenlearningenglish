@@ -367,19 +367,19 @@ namespace AidenLearningEnglish
                     {
                         var childname = "\"" + child["name"] + "\"";
 
+                        List<string> sublist = new List<string>();
+
+                        if (!dict.ContainsKey(childname))
+                        {
+                            dict.Add(childname, sublist);
+                        }
+                        else
+                        {
+                            sublist = dict[childname];
+                        }
+
                         if (child.ContainsKey("children"))
                         {
-                            List<string> sublist = new List<string>();
-
-                            if (!dict.ContainsKey(childname))
-                            {
-                                dict.Add(childname, sublist);
-                            }
-                            else
-                            {
-                                sublist = dict[childname];
-                            }
-
                             var child_children = child["children"];
                             foreach (System.Json.JsonValue child_child in child_children)
                             {
