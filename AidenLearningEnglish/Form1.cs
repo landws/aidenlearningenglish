@@ -69,7 +69,46 @@ namespace AidenLearningEnglish
             {
                 Directory.CreateDirectory(this.cachedir);
             }
+
+            var acsc = new AutoCompleteStringCollection();
+            textBox1.AutoCompleteCustomSource = acsc;
+            textBox1.AutoCompleteMode = AutoCompleteMode.None;
+            textBox1.AutoCompleteSource = AutoCompleteSource.CustomSource;
+            this.listBox1.LostFocus += ListBox1_LostFocus;
+
+
+            using (Stream stream = this.GetType().Assembly.GetManifestResourceStream("AidenLearningEnglish.7940.txt"))
+            {
+                using (StreamReader reader = new StreamReader(stream))
+                {
+                    var str = reader.ReadToEnd();
+                    var lines = str.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var word in lines)
+                    {
+                        acsc.Add(word);
+                    }
+                }
+            }
+
+            new Thread(delegate ()
+            {
+                DirectoryInfo di = new DirectoryInfo(this.cachedir);
+                FileSystemInfo[] files = di.GetFileSystemInfos("*.png");
+                var files1 = files.OrderBy(f => f.CreationTime);
+                //var files1 = Directory.GetFiles(this.cachedir, "*.png");
+                foreach (var filepath in files1)
+                {
+                    var word = Path.GetFileNameWithoutExtension(filepath.FullName);
+                    if (string.IsNullOrEmpty(word)) continue;
+
+                    if (!this.accesswords.Contains(word))
+                    {
+                        this.accesswords.Insert(0, word);
+                    }
+                }
+            }).Start();
         }
+
         string cachedir = "";
         public static bool ValidateServerCertificate(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
@@ -323,6 +362,18 @@ namespace AidenLearningEnglish
                             this.pictureBox1.Tag = (double)bitmap.Width / bitmap.Height;
                             this.panel1_SizeChanged(null, null);
                         }
+
+                        this.textBox1.Text = word;
+                        if (!this.accesswords.Contains(word))
+                        {
+                            this.accesswords.Insert(0, word);
+                        }
+                        //else
+                        //{
+                        //    this.accesswords.Remove(word);
+                        //    this.accesswords.Insert(0, word);
+                        //}
+
                         //this.tabControl2.SelectTab(1);
                         break;
                     }
@@ -624,16 +675,6 @@ namespace AidenLearningEnglish
             Console.WriteLine(dot);
 
             this.RenderSVG(word, dot, browser, png);
-
-            if (!this.accesswords.Contains(word))
-            {
-                this.accesswords.Insert(0, word);
-            }
-            //else
-            //{
-            //    this.accesswords.Remove(word);
-            //    this.accesswords.Insert(0, word);
-            //}
         }
         LookupWord hover = null;
         public void ExtWord(String text)
@@ -705,6 +746,8 @@ namespace AidenLearningEnglish
                 FetchWord(word);
                 this.AccessNew = true;
             }
+
+            hideResults();
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -778,11 +821,26 @@ namespace AidenLearningEnglish
             string current = this.textBox1.Text.Trim();
 
             menu.MenuItems.Clear();
+            int index = 0;
+            MenuItem moreitems = null;
             foreach (var word in accesswords)
             {
-                var menuitem = menu.MenuItems.Add(word);
+                MenuItem menuitem = null;
+                if (index > 14)
+                {
+                    if (moreitems == null)
+                    {
+                        moreitems = menu.MenuItems.Add("More (" + (accesswords.Count - 15) + ")");
+                    }
+                    menuitem = moreitems.MenuItems.Add(word);
+                }
+                else
+                {
+                    menuitem = menu.MenuItems.Add(word);
+                }
                 if (current == word) menuitem.Checked = true;
                 menuitem.Click += Menuitem_Click;
+                index++;
             }
             //var pt = this.button_dropdown.PointToScreen(this.button_dropdown.Location);
             var pt1 = new Point(0, this.button_dropdown.Top + this.button_dropdown.Height);
@@ -794,9 +852,75 @@ namespace AidenLearningEnglish
         private void Menuitem_Click(object sender, EventArgs e)
         {
             MenuItem item = sender as MenuItem;
-            if (item != null && !string.IsNullOrEmpty(item.Text))
+            if (item != null && !string.IsNullOrEmpty(item.Text) && item.MenuItems.Count == 0)
             {
                 this.FetchWord(item.Text);
+            }
+        }
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+            if (!textBox1.Focused) return;
+
+            listBox1.Items.Clear();
+            if (textBox1.Text.Length == 0)
+            {
+                hideResults();
+                return;
+            }
+
+            foreach (String s in textBox1.AutoCompleteCustomSource)
+            {
+                //if (s.Contains(textBox1.Text))
+                if (s.StartsWith(textBox1.Text))
+                {
+                    Console.WriteLine("Found text in: " + s);
+                    listBox1.Items.Add(s);
+                    listBox1.Visible = true;
+                }
+            }
+        }
+        void hideResults()
+        {
+            listBox1.Visible = false;
+        }
+        private void ListBox1_LostFocus(object sender, EventArgs e)
+        {
+            hideResults();
+        }
+
+        private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void textBox1_KeyDown(object sender, KeyEventArgs e)
+        {
+            Console.WriteLine(e.KeyCode);
+
+            if (!listBox1.Visible) return;
+            if (e.KeyCode == Keys.Down)
+            {
+                listBox1.SelectedIndex = 0;
+                listBox1.Focus();
+            }
+        }
+
+        private void listBox1_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (sender != null && e.KeyChar != 13) return;
+
+            textBox1.Text = listBox1.Items[listBox1.SelectedIndex].ToString();
+            hideResults();
+            this.textBox1_KeyPress(null, null);
+        }
+
+        private void listBox1_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            int index = this.listBox1.IndexFromPoint(e.Location);
+            if (index != System.Windows.Forms.ListBox.NoMatches)
+            {
+                this.listBox1_KeyPress(null, null);
             }
         }
     }

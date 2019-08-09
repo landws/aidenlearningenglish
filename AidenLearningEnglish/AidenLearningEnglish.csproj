@@ -141,6 +141,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="7940.txt" />
     <Content Include="accessories_dictionary.ico" />
     <Content Include="dictionary_a.ico" />
     <Content Include="FodyWeavers.xml" />
