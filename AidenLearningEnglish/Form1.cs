@@ -76,8 +76,7 @@ namespace AidenLearningEnglish
             textBox1.AutoCompleteSource = AutoCompleteSource.CustomSource;
             this.listBox1.LostFocus += ListBox1_LostFocus;
 
-
-            using (Stream stream = this.GetType().Assembly.GetManifestResourceStream("AidenLearningEnglish.7940.txt"))
+            using (Stream stream = this.GetType().Assembly.GetManifestResourceStream("AidenLearningEnglish.recite.Aiden7940.txt"))
             {
                 using (StreamReader reader = new StreamReader(stream))
                 {
@@ -85,7 +84,7 @@ namespace AidenLearningEnglish
                     var lines = str.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
                     foreach (var word in lines)
                     {
-                        acsc.Add(word);
+                        if (!string.IsNullOrWhiteSpace(word)) acsc.Add(word);
                     }
                 }
             }
@@ -96,6 +95,7 @@ namespace AidenLearningEnglish
                 FileSystemInfo[] files = di.GetFileSystemInfos("*.png");
                 var files1 = files.OrderBy(f => f.CreationTime);
                 //var files1 = Directory.GetFiles(this.cachedir, "*.png");
+                int count = 0;
                 foreach (var filepath in files1)
                 {
                     var word = Path.GetFileNameWithoutExtension(filepath.FullName);
@@ -105,8 +105,32 @@ namespace AidenLearningEnglish
                     {
                         this.accesswords.Insert(0, word);
                     }
+                    count++;
+                    if (count > 50) break;
                 }
             }).Start();
+
+            this.LoadReciteWords();
+        }
+
+        private void LoadReciteWords()
+        {
+            comboBox_recitewords.Items.Clear();
+            comboBox_recitewords.Items.Add("COCA20000");
+            comboBox_recitewords.Items.Add("Master1000");
+            comboBox_recitewords.Items.Add("Aiden7940");
+
+            string recite = UserProfileConfig.GetConfig("recite");
+            if (string.IsNullOrEmpty(recite))
+            {
+                recite = "Master1000";
+            }
+
+            int index = comboBox_recitewords.Items.IndexOf(recite);
+            if (index > -1 && index < comboBox_recitewords.Items.Count)
+            {
+                comboBox_recitewords.SelectedIndex = index;
+            }
         }
 
         string cachedir = "";
@@ -317,6 +341,19 @@ namespace AidenLearningEnglish
                 var footer = doc.GetElementById("b_footer");
                 if (footer != null) footer.OuterHtml = "";
 
+                //得到第一张图的URL
+                string imgtipurl = "";
+                var imgs = doc.GetElementsByTagName("img");
+                foreach (HtmlElement img in imgs)
+                {
+                    string classname = img.GetAttribute("classname");
+                    if (classname == null) continue;
+                    if (classname.Contains("rms_img"))
+                    {
+                        imgtipurl = img.GetAttribute("src");
+                        break;
+                    }
+                }
                 //var colid = doc.GetElementById("colid");
                 //var antoid = doc.GetElementById("antoid");
                 //var synoid = doc.GetElementById("synoid");
@@ -335,6 +372,18 @@ namespace AidenLearningEnglish
                         if (ants.Count > 0) dict.Add("antonyms", ants);
                         if (syns.Count > 0) dict.Add("synonyms", syns);
 
+                        //如果正在背单词
+                        if (this.tabControl2.SelectedTab == this.tabPage6)
+                        {
+                            if (!string.IsNullOrEmpty(imgtipurl))
+                            {
+                                imgtipurl = imgtipurl.Replace("&w=80&h=80", "&w=180&h=180");
+                                this.pictureBox2.LoadAsync(imgtipurl);
+                                Console.WriteLine("Load image "+ imgtipurl);
+                            }
+                            this.checkedListBox1.Items.Clear();
+                            this.checkedListBox1.Items.AddRange(syns.ToArray());
+                        }
 
                         string file1 = Path.Combine(this.cachedir, word + ".interation.htm");
                         string file3 = Path.Combine(this.cachedir, word + ".png");
@@ -876,7 +925,11 @@ namespace AidenLearningEnglish
                 {
                     Console.WriteLine("Found text in: " + s);
                     listBox1.Items.Add(s);
-                    listBox1.Visible = true;
+                    if (!listBox1.Visible)
+                    {
+                        listBox1.Visible = true;
+                        listBox1.BringToFront();
+                    }
                 }
             }
         }
@@ -922,6 +975,144 @@ namespace AidenLearningEnglish
             {
                 this.listBox1_KeyPress(null, null);
             }
+        }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            switch (keyData)
+            {
+                case Keys.Left:
+                    this.button_preword_Click(null, null);
+                    return true;
+                case Keys.Right:
+                    this.button_nextword_Click(null, null);
+                    return true;
+                case Keys.Up:
+                    this.button_remember_Click(null, null);
+                    return true;
+                case Keys.Down:
+                    this.button_forget_Click(null, null);
+                    return true;
+            }
+
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        ReciteRelated rr = null;
+
+        private void tabControl2_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (this.tabControl2.SelectedTab == this.tabPage6)
+            {
+                this.tabControl1.SelectedTab = this.tabPage7;
+
+                if (this.textBox_reciteword.Text == "")
+                {
+                    PickReciteWord(0);
+                }
+            }
+            else
+            {
+                this.tabControl1.SelectedTab = this.tabPage1;
+            }
+        }
+
+        private void PickReciteWord(int order)
+        {
+            string recitename = this.comboBox_recitewords.SelectedItem.ToString();
+            if (rr == null || (rr != null && rr.Name != recitename))
+            {
+                rr = new ReciteRelated(recitename);
+
+                this.label_recitesource.Text = "Reciting " + rr.Name + " Totals " + rr.Length;
+            }
+
+            this.pictureBox2.Image = null;
+            this.checkedListBox1.Items.Clear();
+            this.tabControl1.SelectedTab = this.tabPage7;
+
+            if (rr.Available)
+            {
+                //没加载过这个词单的单词
+                string word = "";
+                if (order == 0 || rr.Position < 0)
+                    word = rr.PickOne();
+                else if (order == -1)
+                    word = rr.PickPreviousWord();
+                else if (order == 1)
+                    word = rr.PickNextWord();
+
+                if (!string.IsNullOrWhiteSpace(word))
+                {
+                    word = word.Trim();
+                    textBox_reciteword.Text = word;
+
+                    //加载这个单词
+                    this.FetchWord(word);
+                }
+            }
+        }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (this.comboBox_recitewords.SelectedItem != null)
+            {
+                UserProfileConfig.SetValue("recite", this.comboBox_recitewords.SelectedItem.ToString());
+            }
+        }
+
+        private void button_preword_Click(object sender, EventArgs e)
+        {
+            PickReciteWord(-1);
+        }
+
+        private void button_nextword_Click(object sender, EventArgs e)
+        {
+            PickReciteWord(1);
+        }
+
+        private void button_remember_Click(object sender, EventArgs e)
+        {
+            PickReciteWord(1);
+        }
+
+        private void button_forget_Click(object sender, EventArgs e)
+        {
+            //PickReciteWord(1);
+            this.tabControl1.SelectedTab = this.tabPage1;
+        }
+
+        private void button_skipit_Click(object sender, EventArgs e)
+        {
+            PickReciteWord(1);
+        }
+
+        private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (this.tabControl1.SelectedTab == this.tabPage7)
+            {
+                this.tabControl2.SelectedTab = this.tabPage6;
+
+                if (this.textBox_reciteword.Text == "")
+                {
+                    PickReciteWord(0);
+                }
+            }
+            else
+            {
+                //this.tabControl1.SelectedTab = this.tabPage1;
+            }
+
+
+        }
+
+        private void tabPage7_Resize(object sender, EventArgs e)
+        {
+            pictureBox2.Left = (this.tabPage7.Width - pictureBox2.Width) / 2;
+
+            button_remember.Left = (this.tabPage7.Width - button_remember.Width) / 2;
+            button_forget.Left = (this.tabPage7.Width - button_forget.Width) / 2;
+            button_skipit.Left = (this.tabPage7.Width - button_skipit.Width) / 2;
         }
     }
 }

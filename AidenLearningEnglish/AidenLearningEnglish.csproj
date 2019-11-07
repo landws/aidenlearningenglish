@@ -110,6 +110,8 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ReciteRelated.cs" />
+    <Compile Include="UserProfileConfig.cs" />
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
@@ -141,7 +143,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="7940.txt" />
+    <EmbeddedResource Include="recite\COCA20000.txt" />
+    <EmbeddedResource Include="recite\Master1000.txt" />
+    <EmbeddedResource Include="recite\Aiden7940.txt" />
     <Content Include="accessories_dictionary.ico" />
     <Content Include="dictionary_a.ico" />
     <Content Include="FodyWeavers.xml" />
