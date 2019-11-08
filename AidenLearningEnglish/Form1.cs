@@ -983,7 +983,7 @@ namespace AidenLearningEnglish
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
-            if (this.tabControl2.SelectedTab != this.tabPage_recite)
+            if (this.tabControl2.SelectedTab != this.tabPage_recite || this.textBox1.Focused || listBox1.Focused)
             {
                 return base.ProcessCmdKey(ref msg, keyData);
             }
