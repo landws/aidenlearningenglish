@@ -373,13 +373,13 @@ namespace AidenLearningEnglish
                         if (syns.Count > 0) dict.Add("synonyms", syns);
 
                         //如果正在背单词
-                        if (this.tabControl2.SelectedTab == this.tabPage6)
+                        if (this.tabControl2.SelectedTab == this.tabPage_recite)
                         {
                             if (!string.IsNullOrEmpty(imgtipurl))
                             {
                                 imgtipurl = imgtipurl.Replace("&w=80&h=80", "&w=180&h=180");
                                 this.pictureBox2.LoadAsync(imgtipurl);
-                                Console.WriteLine("Load image "+ imgtipurl);
+                                Console.WriteLine("Load image " + imgtipurl);
                             }
                             this.checkedListBox1.Items.Clear();
                             this.checkedListBox1.Items.AddRange(syns.ToArray());
@@ -790,6 +790,10 @@ namespace AidenLearningEnglish
 
             if (e == null || e.KeyChar == 13)
             {
+                if (this.tabControl2.SelectedTab == this.tabPage_recite)
+                {
+                    this.tabControl2.SelectedTab = this.tabPage4;
+                }
                 //this.webBrowser1.Navigate("https://www.freethesaurus.com/" + word);
                 //this.webBrowser1.Navigate("https://cn.bing.com/dict/search?q=" + word);
                 FetchWord(word);
@@ -987,10 +991,10 @@ namespace AidenLearningEnglish
                 case Keys.Right:
                     this.button_nextword_Click(null, null);
                     return true;
-                case Keys.Up:
+                case Keys.Down:
                     this.button_remember_Click(null, null);
                     return true;
-                case Keys.Down:
+                case Keys.Up:
                     this.button_forget_Click(null, null);
                     return true;
             }
@@ -1002,9 +1006,9 @@ namespace AidenLearningEnglish
 
         private void tabControl2_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (this.tabControl2.SelectedTab == this.tabPage6)
+            if (this.tabControl2.SelectedTab == this.tabPage_recite)
             {
-                this.tabControl1.SelectedTab = this.tabPage7;
+                this.tabControl1.SelectedTab = this.tabPage_recitecontrol;
 
                 if (this.textBox_reciteword.Text == "")
                 {
@@ -1029,7 +1033,7 @@ namespace AidenLearningEnglish
 
             this.pictureBox2.Image = null;
             this.checkedListBox1.Items.Clear();
-            this.tabControl1.SelectedTab = this.tabPage7;
+            this.tabControl1.SelectedTab = this.tabPage_recitecontrol;
 
             if (rr.Available)
             {
@@ -1089,9 +1093,9 @@ namespace AidenLearningEnglish
 
         private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (this.tabControl1.SelectedTab == this.tabPage7)
+            if (this.tabControl1.SelectedTab == this.tabPage_recitecontrol)
             {
-                this.tabControl2.SelectedTab = this.tabPage6;
+                this.tabControl2.SelectedTab = this.tabPage_recite;
 
                 if (this.textBox_reciteword.Text == "")
                 {
@@ -1108,11 +1112,11 @@ namespace AidenLearningEnglish
 
         private void tabPage7_Resize(object sender, EventArgs e)
         {
-            pictureBox2.Left = (this.tabPage7.Width - pictureBox2.Width) / 2;
+            pictureBox2.Left = (this.tabPage_recitecontrol.Width - pictureBox2.Width) / 2;
 
-            button_remember.Left = (this.tabPage7.Width - button_remember.Width) / 2;
-            button_forget.Left = (this.tabPage7.Width - button_forget.Width) / 2;
-            button_skipit.Left = (this.tabPage7.Width - button_skipit.Width) / 2;
+            button_remember.Left = (this.tabPage_recitecontrol.Width - button_remember.Width) / 2;
+            button_forget.Left = (this.tabPage_recitecontrol.Width - button_forget.Width) / 2;
+            button_skipit.Left = (this.tabPage_recitecontrol.Width - button_skipit.Width) / 2;
         }
     }
 }
