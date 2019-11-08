@@ -983,6 +983,11 @@ namespace AidenLearningEnglish
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
+            if (this.tabControl2.SelectedTab != this.tabPage_recite)
+            {
+                return base.ProcessCmdKey(ref msg, keyData);
+            }
+
             switch (keyData)
             {
                 case Keys.Left:
